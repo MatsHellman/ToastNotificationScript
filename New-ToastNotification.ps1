@@ -63,7 +63,8 @@
               Created Test-NTsystem function
                 - Testing if the script is being run as SYSTEM. This is not supported  
               Converted all Get-WMIObject to Get-CimInstance
-                - Get-WMIObject has been deprecated and is replaced with Get-CimInstance                
+                - Get-WMIObject has been deprecated and is replaced with Get-CimInstance
+    1.7   -   Added a Function to retrieve the DynamicDeadline for servicing updates from WMI.                 
 
 .LINK
     https://www.imab.dk/windows-10-toast-notification-script/
@@ -360,13 +361,29 @@ function Get-DynamicDeadline() {
     Write-Log -Message "Running Get-DynamicDeadline function. Trying to get task sequence deadline details from WMI and ConfigMgr"
     
     if (Get-Service -Name ccmexec -ErrorAction SilentlyContinue) {
-        try {
-            # Get task sequence program information from WMI. This is the same location used by Software Center
-            $TSPackageID = Get-CimInstance -Namespace root\ccm\clientsdk -Query "SELECT * FROM CCM_Program where PackageID = '$DynDeadlineValue'"
+        if ($OSUpgradeTypeValue -eq "TaskSequence"){
+            try {
+                # Get task sequence program information from WMI. This is the same location used by Software Center
+                $TSPackageID = Get-CimInstance -Namespace root\ccm\clientsdk -Query "SELECT * FROM CCM_Program where PackageID = '$DynDeadlineValue'"
+            }
+            catch { 
+                Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
+            }
         }
-        catch { 
-            Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
+        else if ($OSUpgradeType -eq "Update"){
+            try {
+                # Get task sequence program information from WMI. This is the same location used by Software Center
+                $UpdateID = Get-CimInstance -Namespace root\ccm\clientsdk -Query "SELECT * FROM CCM_SoftwareUpdate where UpdateID = '$DynDeadlineValue'"
+            }
+            catch { 
+                Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
+            }
+
         }
+        else {
+            Write-Log -Message "Failed to get PackageID or UpdateID from WMI" -Level Warn
+        }
+
 
         if ($TSPackageID.TaskSequence -eq $True) {
             # Get the deadline from the task sequence program
@@ -387,8 +404,28 @@ function Get-DynamicDeadline() {
                 Write-Log -Message "The script is continuing, but the toast is displayed without deadline date and time" -Level Warn
             }
         }
+        else if ($UpdateID.ComplianceState -eq $False{
+            # Get the deadline from the task sequence program
+            # The Where-Object clause filters out any old/dummy deadline values
+            # The Measure-Object clause returns only the earliest deadline if multiple program instances are found. In testing, I've only seen one instance
+            # per package ID even if multiple deployments of the same task sequence with different deadlines are targeted, so this is more of a failsafe
+            Write-Log -Message "UpdateID of servicing update successfully retrieved. UpdateID is: $DynDeadlineValue. Now getting deadline date and time"
+            $Deadline = $TSPackageID.Deadline
+            #($TSPackageID | Where-Object {$_.Deadline -gt (Get-Date).AddDays(-1)} | Measure-Object -Property Deadline -Minimum).Minimum
+            
+            if ($Deadline) {
+                # Deadline date and time retrieved. I'm formatting the date later on in the actual toast xml
+                Write-Log -Message "Deadline date and time successfully retrieved from WMI. Deadline is: $Deadline"
+                $Deadline.ToUniversalTime()
+            }
+            else {
+                Write-Log -Message "Failed to get deadline date and time from WMI" -Level Warn
+                Write-Log -Message "Please check if there really is a deadline configured" -Level Warn
+                Write-Log -Message "The script is continuing, but the toast is displayed without deadline date and time" -Level Warn
+            }
+        }
         else {
-            Write-Log -Message "Appears that the specified package ID: $DynDeadlineValue is not a task sequence. Only task sequences are supported for now"
+            Write-Log -Message "Appears that the specified package / update ID: $DynDeadlineValue is not a task sequence nor a servicing update. Only task sequences and servicing updates are supported for now"
             # Nothing to see here yet  
         }
     }
@@ -622,6 +659,10 @@ try {
     $DeadlineContent = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Deadline'} | Select-Object -ExpandProperty 'Value'
     $DynDeadlineEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DynamicDeadline'} | Select-Object -ExpandProperty 'Enabled'
     $DynDeadlineValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DynamicDeadline'} | Select-Object -ExpandProperty 'Value'
+    $SiteInfoEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SiteInformation'} | Select-Object -ExpandProperty 'Enabled'
+    $SiteInfoValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SiteInformation'} | Select-Object -ExpandProperty 'Value'
+    $OSUpgradeTypeEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSUpgradeType'} | Select-Object -ExpandProperty 'Enabled'
+    $OSUpgradeTypeValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSUpgradeType'} | Select-Object -ExpandProperty 'Value'
     
     $RunPackageIDEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RunPackageID'} | Select-Object -ExpandProperty 'Enabled'
     $RunPackageIDValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'RunPackageID'} | Select-Object -ExpandProperty 'Value'

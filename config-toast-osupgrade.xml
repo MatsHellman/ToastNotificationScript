@@ -14,6 +14,8 @@
 	<Option Name="RunPackageID" Enabled="False" Value="KR100907" /> <!-- Will enable the toast to run any ConfigMgr PackageID through a custom protocol -->
 	<Option Name="RunApplicationID" Enabled="True" Value="ScopeId_A9117680-D054-482B-BC97-532E6CBD0E6B/Application_fd55f35c-4e34-4490-a3ec-ee0b79233ec6" /> <!-- Will enable the toast to run any ConfigMgr ApplicationID through a custom protocol -->
 	<Option Name="Deadline" Enabled="False" Value="30-09-2019 08:00" />	<!-- Adds an additional group to the toast with text about the deadline of the OSUpgrade -->
+	<Option Name="OSUpgradeType" Enabled="True" Value="Update" /> <!-- Select if the OSUpgrade is a task sequence or if using services, possible values Update , TaskSequence-->
+	<Option Name="SiteInformation" Enabled="True" Value="" /> <!-- Value of the site and SUM information found in WMI if OSUpgradeType is set to Update -->
 	<Option Name="DynamicDeadline" Enabled="True" Value="KR100907" />	<!-- Adds an additional group to the toast with text about the deadline of the OSUpgrade. This will retrieve the deadline of the IPU from WMI -->
 	<Option Name="UseSoftwareCenterApp" Enabled="True" />	<!-- The app in Windows doing the action notification - can't be both SoftwareCenter and Powershell -->
 	<Option Name="UsePowershellApp" Enabled="False" />	<!-- The app in Windows doing the action notification - can't be both SoftwareCenter and Powershell -->
