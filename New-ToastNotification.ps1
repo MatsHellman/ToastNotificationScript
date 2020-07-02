@@ -370,13 +370,15 @@ function Get-DynamicDeadline() {
                 Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
             }
         }
-        else if ($OSUpgradeType -eq "Update"){
+        elseif ($OSUpgradeTypeValue -eq "Update") {
             try {
                 # Get task sequence program information from WMI. This is the same location used by Software Center
-                $UpdateID = Get-CimInstance -Namespace root\ccm\clientsdk -Query "SELECT * FROM CCM_SoftwareUpdate where UpdateID = '$DynDeadlineValue'"
+                $UpdateID = Get-CimInstance -Namespace root\ccm\clientsdk -Query "SELECT * FROM CCM_SoftwareUpdate where UpdateID LIKE '$DynDeadlineValue'"
+                Write-Log -Message "UpdateID retrieved '$UpdateID'" -Level Warn
             }
             catch { 
-                Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
+                Write-Log -Message "Failed to get UpdateID of update from WMI" -Level Warn
+                $ToastEnabled = "False"
             }
 
         }
@@ -404,13 +406,13 @@ function Get-DynamicDeadline() {
                 Write-Log -Message "The script is continuing, but the toast is displayed without deadline date and time" -Level Warn
             }
         }
-        else if ($UpdateID.ComplianceState -eq $False{
+        elseif ($UpdateID.ComplianceState -eq $False) {
             # Get the deadline from the task sequence program
             # The Where-Object clause filters out any old/dummy deadline values
             # The Measure-Object clause returns only the earliest deadline if multiple program instances are found. In testing, I've only seen one instance
             # per package ID even if multiple deployments of the same task sequence with different deadlines are targeted, so this is more of a failsafe
             Write-Log -Message "UpdateID of servicing update successfully retrieved. UpdateID is: $DynDeadlineValue. Now getting deadline date and time"
-            $Deadline = $TSPackageID.Deadline
+            $Deadline = $UpdateID.Deadline
             #($TSPackageID | Where-Object {$_.Deadline -gt (Get-Date).AddDays(-1)} | Measure-Object -Property Deadline -Minimum).Minimum
             
             if ($Deadline) {
@@ -426,11 +428,13 @@ function Get-DynamicDeadline() {
         }
         else {
             Write-Log -Message "Appears that the specified package / update ID: $DynDeadlineValue is not a task sequence nor a servicing update. Only task sequences and servicing updates are supported for now"
+            break
             # Nothing to see here yet  
         }
     }
     else {
         Write-Log -Message -Level Warn "ConfigMgr service not found"
+        break
     }
 }
 
