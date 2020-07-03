@@ -368,6 +368,7 @@ function Get-DynamicDeadline() {
             }
             catch { 
                 Write-Log -Message "Failed to get PackageID of task sequence from WMI" -Level Warn
+                break
             }
         }
         elseif ($OSUpgradeTypeValue -eq "Update") {
@@ -378,7 +379,7 @@ function Get-DynamicDeadline() {
             }
             catch { 
                 Write-Log -Message "Failed to get UpdateID of update from WMI" -Level Warn
-                $ToastEnabled = "False"
+                break
             }
 
         }
