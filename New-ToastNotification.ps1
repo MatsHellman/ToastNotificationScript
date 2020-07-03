@@ -664,8 +664,6 @@ try {
     $DeadlineContent = $Xml.Configuration.Option | Where-Object {$_.Name -like 'Deadline'} | Select-Object -ExpandProperty 'Value'
     $DynDeadlineEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DynamicDeadline'} | Select-Object -ExpandProperty 'Enabled'
     $DynDeadlineValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'DynamicDeadline'} | Select-Object -ExpandProperty 'Value'
-    $SiteInfoEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SiteInformation'} | Select-Object -ExpandProperty 'Enabled'
-    $SiteInfoValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'SiteInformation'} | Select-Object -ExpandProperty 'Value'
     $OSUpgradeTypeEnabled = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSUpgradeType'} | Select-Object -ExpandProperty 'Enabled'
     $OSUpgradeTypeValue = $Xml.Configuration.Option | Where-Object {$_.Name -like 'OSUpgradeType'} | Select-Object -ExpandProperty 'Value'
     
